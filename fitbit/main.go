@@ -163,7 +163,7 @@ type HeartData struct {
 }
 
 // heartBeat returns heart beat data
-func heartBeat(date string) HeartData {
+func HeartBeat(date string) HeartData {
 	url := fmt.Sprintf("https://api.fitbit.com/1/user/-/activities/heart/date/%s/1d.json", date)
 	res := request(url)
 	var heartData HeartData
@@ -197,7 +197,7 @@ type BreathingRateData struct {
 }
 
 // breathingRate returns breathing rate data for a given day
-func breathingRate(date string) BreathingRateData {
+func BreathingRate(date string) BreathingRateData {
 	url := fmt.Sprintf("https://api.fitbit.com/1/user/-/br/date/%s/all.json", date)
 	res := request(url)
 	var brData BreathingRateData
@@ -224,7 +224,7 @@ type TempSkinData struct {
 }
 
 // skinTemperature returns skin temperature data for a given day
-func skinTemperature(date string) TempSkinData {
+func SkinTemperature(date string) TempSkinData {
 	url := fmt.Sprintf("https://api.fitbit.com/1/user/-/temp/skin/date/%s.json", date)
 	res := request(url)
 	var tempSkinData TempSkinData
@@ -292,7 +292,7 @@ type SleepData struct {
 }
 
 // sleep returns sleep data for a given day
-func sleep(date string) SleepData {
+func SleepDetail(date string) SleepData {
 	url := fmt.Sprintf("https://api.fitbit.com/1.2/user/-/sleep/date/%s.json", date)
 	res := request(url)
 	var sleepData SleepData
