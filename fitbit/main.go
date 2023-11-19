@@ -33,7 +33,7 @@ type NewToken struct {
 
 // readConf reads conf.json and set to conf
 func readConf() Config {
-	file, _ := os.Open("conf.json")
+	file, _ := os.Open("fitbit/conf.json")
 	defer file.Close()
 	var conf Config
 	decoder := json.NewDecoder(file)
@@ -73,7 +73,7 @@ func refresh() {
 	var newToken NewToken
 	_ = json.Unmarshal(body, &newToken)
 	conf.AccessToken = newToken.AccessToken
-	file, _ := os.OpenFile("conf.json", os.O_WRONLY|os.O_TRUNC|os.O_CREATE, 0666)
+	file, _ := os.OpenFile("fitbit/conf.json", os.O_WRONLY|os.O_TRUNC|os.O_CREATE, 0666)
 	defer file.Close()
 	encoder := json.NewEncoder(file)
 	_ = encoder.Encode(conf)
