@@ -32,12 +32,18 @@ func getHeader() map[string]string {
 	return header
 }
 
-func getRequest(urlStr string) []byte {
+func Request(urlStr string, method string, params []byte) []byte {
 	header := getHeader()
+	if method != "GET" {
+		header["Content-Type"] = "application/json"
+	}
 	client := &http.Client{}
-	req, _ := http.NewRequest("GET", urlStr, nil)
+	req, _ := http.NewRequest(method, urlStr, nil)
 	for key, value := range header {
 		req.Header.Add(key, value)
+	}
+	if method != "GET" {
+		req.Body = io.NopCloser(bytes.NewBuffer(params))
 	}
 	res, err := client.Do(req)
 	if err != nil {
@@ -49,76 +55,75 @@ func getRequest(urlStr string) []byte {
 	}
 	return resBody
 }
-
 func GetRecord(id int) []byte {
 	conf := readConf()
-	url := fmt.Sprintf("https://%s.cybozu.com/k/v1/record.json?app=%s&id=%d", conf.Subdomain, conf.API_ID, id)
-	res := getRequest(url)
+	urlStr := fmt.Sprintf("https://%s.cybozu.com/k/v1/record.json?app=%s&id=%d", conf.Subdomain, conf.API_ID, id)
+	res := Request(urlStr, "GET", nil)
 	return res
 }
 
 func GetAllRecords() []byte {
 	conf := readConf()
-	url := fmt.Sprintf("https://%s.cybozu.com/k/v1/records.json?app=%s", conf.Subdomain, conf.API_ID)
-	res := getRequest(url)
+	urlStr := fmt.Sprintf("https://%s.cybozu.com/k/v1/records.json?app=%s", conf.Subdomain, conf.API_ID)
+	res := Request(urlStr, "GET", nil)
 	return res
 }
 
-func postHeader() map[string]string {
+func PostRecord(paramMap map[string]interface{}) []byte {
 	conf := readConf()
-	header := map[string]string{
-		"X-Cybozu-API-Token": conf.API_TOKEN,
-		"Content-Type":       "application/json",
-	}
-	return header
-}
+	urlStr := fmt.Sprintf("https://%s.cybozu.com/k/v1/record.json", conf.Subdomain)
 
-func postRequest(url string, params []byte) []byte {
-	header := postHeader()
-	client := &http.Client{}
+	params := map[string]interface{}{
+		"app": conf.API_ID,
+		"record": func() map[string]interface{} {
+			record := make(map[string]interface{})
+			for k, v := range paramMap {
+				record[k] = map[string]interface{}{
+					"value": v,
+				}
+			}
+			return record
+		}(),
+	}
 	jsonParams, _ := json.Marshal(params)
-	req, _ := http.NewRequest("POST", url, nil)
-	for key, value := range header {
-		req.Header.Add(key, value)
-	}
-	req.Body = io.NopCloser(bytes.NewBuffer(jsonParams))
-	res, err := client.Do(req)
-	if err != nil {
-		fmt.Println(err)
-	}
-	resBody, err := io.ReadAll(res.Body)
-	if err != nil {
-		fmt.Println(err)
-	}
-	return resBody
+	res := Request(urlStr, "POST", jsonParams)
+
+	return res
 }
 
-type InnerRecord struct {
-	Value string `json:"value"`
-}
-
-type OuterRecord struct {
-	Hello InnerRecord `json:"hello"`
-}
-
-type Record struct {
-	App    string      `json:"app"`
-	Record OuterRecord `json:"record"`
-}
-
-func PostRecord(params Record) []byte {
+func UpdateRecord(id int, paramMap map[string]interface{}) []byte {
 	conf := readConf()
-	url := fmt.Sprintf("https://%s.cybozu.com/k/v1/record.json?app=%s", conf.Subdomain, conf.API_ID)
+	urlStr := fmt.Sprintf("https://%s.cybozu.com/k/v1/record.json", conf.Subdomain)
 
-	jsonParams, err := json.Marshal(params)
-	if err != nil {
-		fmt.Println(err)
+	params := map[string]interface{}{
+		"app": conf.API_ID,
+		"id":  id,
+		"record": func() map[string]interface{} {
+			record := make(map[string]interface{})
+			for k, v := range paramMap {
+				record[k] = map[string]interface{}{
+					"value": v,
+				}
+			}
+			return record
+		}(),
 	}
-	fmt.Println(string(jsonParams))
-	res := postRequest(url, jsonParams)
-	if err != nil {
-		fmt.Println(err)
+	jsonParams, _ := json.Marshal(params)
+	res := Request(urlStr, "PUT", jsonParams)
+
+	return res
+}
+
+func DeleteRecord(ids []int) []byte {
+	conf := readConf()
+	urlStr := fmt.Sprintf("https://%s.cybozu.com/k/v1/records.json", conf.Subdomain)
+
+	params := map[string]interface{}{
+		"app": conf.API_ID,
+		"ids": ids,
 	}
-	fmt.Println(string(res))
+	jsonParams, _ := json.Marshal(params)
+	res := Request(urlStr, "DELETE", jsonParams)
+
 	return res
 }
