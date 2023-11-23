@@ -79,10 +79,14 @@ func refresh() {
 	var newToken NewToken
 	_ = json.Unmarshal(body, &newToken)
 	conf.AccessToken = newToken.AccessToken
-	file, _ := os.OpenFile("fitbit/conf.json", os.O_WRONLY|os.O_TRUNC|os.O_CREATE, 0666)
-	defer file.Close()
-	encoder := json.NewEncoder(file)
-	_ = encoder.Encode(conf)
+	file, err := os.OpenFile("fitbit/conf.json", os.O_WRONLY|os.O_TRUNC|os.O_CREATE, 0666)
+	if err == nil {
+		defer file.Close()
+		encoder := json.NewEncoder(file)
+		_ = encoder.Encode(conf)
+	} else {
+		os.Setenv("ACCESS_TOKEN", newToken.AccessToken)
+	}
 }
 
 // isExpired checks if access token is expired
