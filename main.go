@@ -38,6 +38,9 @@ func HandleRequest(ctx context.Context) (*string, error) {
 	params["fullSleepBR"] = breathData.BR[0].Value.FullSleepSummary.BreathingRate
 	params["lightSleepBR"] = breathData.BR[0].Value.LightSleepSummary.BreathingRate
 
+	tempData:= fitbit.SkinTemperature(today)
+	params["skinTemp"] =tempData.TempSkin[0].Value.NightlyRelative
+
 	
 
 	// existed がサイズ0の場合
