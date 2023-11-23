@@ -46,7 +46,7 @@ func HandleRequest(ctx context.Context) (*string, error) {
 	params["sleepEfficiency"] = sleepData.Sleep[0].Efficiency
 	params["sleepStartTime"] = sleepData.Sleep[0].StartTime
 	params["sleepEndTime"] = sleepData.Sleep[0].EndTime
-	params["timInBed"] = sleepData.Sleep[0].TimeInBed
+	params["timeInBed"] = sleepData.Sleep[0].TimeInBed
 	sleepLevels := []string{"wake", "light", "rem", "deep"}
 	for _, sl := range sleepLevels {
 		params[sl+"SleepCount"] = sleepData.Sleep[0].Levels.Summary[sl].Count
@@ -55,9 +55,9 @@ func HandleRequest(ctx context.Context) (*string, error) {
 	}
 
 	spO2Data := fitbit.SpO2(today)
-	params["spO2Min"] = spO2Data.Value.Min
-	params["spO2Max"] = spO2Data.Value.Max
-	params["spO2Avg"] = spO2Data.Value.Avg
+	params["SpO2Min"] = spO2Data.Value.Min
+	params["SpO2Max"] = spO2Data.Value.Max
+	params["SpO2Avg"] = spO2Data.Value.Avg
 
 	VO2Data := fitbit.VO2Max(today)
 	params["VO2Max"] = VO2Data.CardioScore[0].Value.Vo2Max
