@@ -1,14 +1,20 @@
 package main
 
 import (
+	"context"
 	"fmt"
 
-	"github.com/iorn121/MyDailyRecord/kintone"
+	"github.com/aws/aws-lambda-go/lambda"
 )
 
 func main() {
-	res := kintone.IsExisted("2023-11-19")
-	res2 := kintone.GetRecordByDate("2023-11-20", "2023-11-19")
-	fmt.Println(res)
-	fmt.Println(string(res2))
+	lambda.Start(HandleRequest)
+}
+
+type MyEvent struct {
+	Name string `json:"name"`
+}
+
+func HandleRequest(ctx context.Context, name MyEvent) (string, error) {
+	return fmt.Sprintf("Hello %s!", name.Name), nil
 }
