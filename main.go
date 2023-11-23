@@ -54,6 +54,18 @@ func HandleRequest(ctx context.Context) (*string, error) {
 		params[sl+"SleepThirtyDayAvgMinutes"] = sleepData.Sleep[0].Levels.Summary[sl].ThirtyDayAvgMinutes
 	}
 
+	spO2Data := fitbit.SpO2(today)
+	params["spO2Min"] = spO2Data.Value.Min
+	params["spO2Max"] = spO2Data.Value.Max
+	params["spO2Avg"] = spO2Data.Value.Avg
+
+	VO2Data := fitbit.VO2Max(today)
+	params["VO2Max"] = VO2Data.CardioScore[0].Value.Vo2Max
+
+	HRVData := fitbit.HRV(today)
+	params["dailyHRV"] = HRVData.Hrv[0].Value.DailyRmssd
+	params["deepHRV"] = HRVData.Hrv[0].Value.DeepRmssd
+
 	// existed がサイズ0の場合
 	if len(existed) == 0 {
 		kintone.PostRecord(params)

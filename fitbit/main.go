@@ -363,8 +363,8 @@ func VO2Max(date string) CardioScoreData {
 
 // Heart Rate Variability (HRV) data applies specifically to a user’s “main sleep,” which is the longest single period of time asleep on a given date.
 type HrvValue struct {
-	DailyRmssd float64 `json:"dailyRmssd"`
-	DeepRmssd  float64 `json:"deepRmssd"`
+	DailyRmssd float64 `json:"dailyRmssd"` // The Root Mean Square of Successive Differences (RMSSD) between heart beats. It measures short-term variability in the user’s daily heart rate in milliseconds (ms).
+	DeepRmssd  float64 `json:"deepRmssd"`  // The Root Mean Square of Successive Differences (RMSSD) between heart beats. It measures short-term variability in the user’s heart rate while in deep sleep, in milliseconds (ms).
 }
 
 type Hrv struct {
