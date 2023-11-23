@@ -5,12 +5,13 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/iorn121/MyDailyRecord/kintone"
 )
 
 func main() {
-	lambda.Start(HandleRequest)
+	// lambda.Start(HandleRequest)
+	flg := kintone.IsExisted("2024-01-01")
+	fmt.Println(flg)
 }
 
 type MyEvent struct {
@@ -19,7 +20,7 @@ type MyEvent struct {
 
 func isDate(date string) bool {
 	_, err := time.Parse(time.RFC3339, date)
-	return err == nil
+	return err != nil
 }
 
 func HandleRequest(ctx context.Context, event *MyEvent) (*string, error) {
@@ -29,16 +30,11 @@ func HandleRequest(ctx context.Context, event *MyEvent) (*string, error) {
 	if !isDate(event.Today) {
 		return nil, fmt.Errorf("invalid date format: %s", event.Today)
 	}
-	todayData := kintone.GetRecordByDate(event.Today, event.Today)
-	if len(todayData.Records) > 0 {
-		// 
+	if kintone.IsExisted("TODAY()") {
+		fmt.Println("existed")
+	} else {
+		fmt.Println("not existed")
 	}
-	params := map[string]interface{}{
-		"date":  "2024-01-01",
-		"hello": "lambda",
-		"sleep": "8",
-	}
-	kintone.PostRecord(params)
 	message := fmt.Sprintf("Hello %s!", event.Today)
 	return &message, nil
 }

@@ -140,21 +140,23 @@ type Cursor struct {
 	Total int    `json:"totalCount"`
 }
 
+type ResRecords struct {
+	Records    []Record `json:"records"`
+	TotalCount int      `json:"totalCount"`
+}
+
+type Record struct {
+	Type  string      `json:"type"`
+	Value interface{} `json:"value"`
+}
+
 func IsExisted(date string) bool {
 	conf := readConf()
-	urlStr := fmt.Sprintf("https://%s.cybozu.com/k/v1/records/cursor.json", conf.Subdomain)
-	params := map[string]interface{}{
-		"app":    conf.APIID,
-		"fields": []string{"レコード番号"},
-		"query":  fmt.Sprintf("date=\"%s\"", date),
-		"size":   500,
-	}
-	jsonParams, _ := json.Marshal(params)
-	res := Request(urlStr, "POST", jsonParams)
-	var cursor Cursor
-	json.Unmarshal(res, &cursor)
-	fmt.Println(cursor.Total)
-	return cursor.Total > 0
+	urlStr := fmt.Sprintf("https://%s.cybozu.com/k/v1/records.json?app=1&query=date=\"%s\"", conf.Subdomain, date)
+	res := Request(urlStr, "GET", nil)
+	var resRecords ResRecords
+	json.Unmarshal(res, &resRecords)
+	return len(resRecords.Records) > 0
 }
 
 func GetRecordByDate(fromDate string, toDate string) []byte {
