@@ -152,8 +152,8 @@ type HeartValue struct {
 }
 
 type ActivitiesHeart struct {
-	DateTime string    `json:"dateTime"`
-	Value    HeartData `json:"value"`
+	DateTime string     `json:"dateTime"`
+	Value    HeartValue `json:"value"`
 }
 
 type everytime struct {

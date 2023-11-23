@@ -139,24 +139,31 @@ type Cursor struct {
 	Id    string `json:"id"`
 	Total int    `json:"totalCount"`
 }
-
-type ResRecords struct {
-	Records    []Record `json:"records"`
-	TotalCount int      `json:"totalCount"`
-}
-
 type Record struct {
-	Type  string      `json:"type"`
-	Value interface{} `json:"value"`
+	Type  string `json:"type"`
+	Value int    `json:"value"`
 }
 
-func IsExisted(date string) bool {
+type RecordEntry struct {
+	RecordNumber Record `json:"レコード番号"`
+}
+
+type Response struct {
+	Records    []RecordEntry `json:"records"`
+	TotalCount int           `json:"totalCount"`
+}
+
+func ExistedIndex(date string) []int {
 	conf := readConf()
-	urlStr := fmt.Sprintf("https://%s.cybozu.com/k/v1/records.json?app=1&query=date=\"%s\"", conf.Subdomain, date)
+	urlStr := fmt.Sprintf("https://%s.cybozu.com/k/v1/records.json?app=1&query=date=\"%s\"&fields[0]=レコード番号&totalCount=true", conf.Subdomain, date)
 	res := Request(urlStr, "GET", nil)
-	var resRecords ResRecords
-	json.Unmarshal(res, &resRecords)
-	return len(resRecords.Records) > 0
+	var response Response
+	json.Unmarshal(res, &response)
+	var index []int
+	for _, r := range response.Records {
+		index = append(index, r.RecordNumber.Value)
+	}
+	return index
 }
 
 func GetRecordByDate(fromDate string, toDate string) []byte {

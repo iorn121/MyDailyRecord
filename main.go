@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/aws/aws-lambda-go/lambda"
+	"github.com/iorn121/MyDailyRecord/fitbit"
 	"github.com/iorn121/MyDailyRecord/kintone"
 )
 
@@ -13,30 +14,30 @@ func main() {
 	lambda.Start(HandleRequest)
 }
 
-type MyEvent struct {
-	Today string `json:"today"`
-}
+func HandleRequest(ctx context.Context) (*string, error) {
 
-func isDate(date string) bool {
-	_, err := time.Parse(time.RFC3339, date)
-	return err != nil
-}
-
-func HandleRequest(ctx context.Context, event *MyEvent) (*string, error) {
-	if event == nil {
-		return nil, fmt.Errorf("received nil event")
-	}
-	if !isDate(event.Today) {
-		return nil, fmt.Errorf("invalid date format: %s", event.Today)
-	}
 	today := time.Now().Format("2006-01-02")
+	existed := kintone.ExistedIndex(today)
+	var params map[string]interface{}
 
-	
-	if kintone.IsExisted(today) {
-		fmt.Println("existed")
-	} else {
-		fmt.Println("not existed")
+	heartData := fitbit.HeartBeat(today)
+	zones := []string{"outOfRange", "fatBurn", "cardio", "peak"}
+	for i, hrz := range heartData.ActivitiesHeart[0].Value.HeartRateZones {
+		zone := zones[i]
+		params[zone+"CaloriesOut"] = hrz.CaloriesOut
+		params[zone+"Min"] = hrz.Min
+		params[zone+"Max"] = hrz.Max
+		params[zone+"Minutes"] = hrz.Minutes
 	}
-	message := fmt.Sprintf("Hello %s!", event.Today)
-	return &message, nil
+	params["restingHeartRate"] = heartData.ActivitiesHeart[0].Value.RestingHeartRate
+
+	// existed がサイズ0の場合
+	if len(existed) == 0 {
+		kintone.PostRecord(params)
+	} else if len(existed) == 1 {
+		kintone.UpdateRecord(existed[0], params)
+	} else {
+		return nil, fmt.Errorf("Today's data is duplicated")
+	}
+	return nil, nil
 }
