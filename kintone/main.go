@@ -10,24 +10,31 @@ import (
 )
 
 type Config struct {
-	Subdomain string
-	API_TOKEN string
-	API_ID    string
+	Subdomain string `json:"subdomain"`
+	APIToken  string `json:"api_token"`
+	APIID     string `json:"api_id"`
 }
 
 func readConf() Config {
-	file, _ := os.Open("kintone/conf.json")
-	defer file.Close()
+	file, err := os.Open("kintone/conf.json")
 	var conf Config
-	decoder := json.NewDecoder(file)
-	_ = decoder.Decode(&conf)
+	if err == nil {
+		defer file.Close()
+		decoder := json.NewDecoder(file)
+		_ = decoder.Decode(&conf)
+	} else {
+		conf.Subdomain = os.Getenv("SUBDOMAIN")
+		conf.APIToken = os.Getenv("API_TOKEN")
+		conf.APIID = os.Getenv("API_ID")
+	}
+
 	return conf
 }
 
 func getHeader() map[string]string {
 	conf := readConf()
 	header := map[string]string{
-		"X-Cybozu-API-Token": conf.API_TOKEN,
+		"X-Cybozu-API-Token": conf.APIToken,
 	}
 	return header
 }
@@ -57,14 +64,14 @@ func Request(urlStr string, method string, params []byte) []byte {
 }
 func GetRecord(id int) []byte {
 	conf := readConf()
-	urlStr := fmt.Sprintf("https://%s.cybozu.com/k/v1/record.json?app=%s&id=%d", conf.Subdomain, conf.API_ID, id)
+	urlStr := fmt.Sprintf("https://%s.cybozu.com/k/v1/record.json?app=%s&id=%d", conf.Subdomain, conf.APIID, id)
 	res := Request(urlStr, "GET", nil)
 	return res
 }
 
 func GetAllRecords() []byte {
 	conf := readConf()
-	urlStr := fmt.Sprintf("https://%s.cybozu.com/k/v1/records.json?app=%s", conf.Subdomain, conf.API_ID)
+	urlStr := fmt.Sprintf("https://%s.cybozu.com/k/v1/records.json?app=%s", conf.Subdomain, conf.APIID)
 	res := Request(urlStr, "GET", nil)
 	return res
 }
@@ -74,7 +81,7 @@ func PostRecord(paramMap map[string]interface{}) []byte {
 	urlStr := fmt.Sprintf("https://%s.cybozu.com/k/v1/record.json", conf.Subdomain)
 
 	params := map[string]interface{}{
-		"app": conf.API_ID,
+		"app": conf.APIID,
 		"record": func() map[string]interface{} {
 			record := make(map[string]interface{})
 			for k, v := range paramMap {
@@ -96,7 +103,7 @@ func UpdateRecord(id int, paramMap map[string]interface{}) []byte {
 	urlStr := fmt.Sprintf("https://%s.cybozu.com/k/v1/record.json", conf.Subdomain)
 
 	params := map[string]interface{}{
-		"app": conf.API_ID,
+		"app": conf.APIID,
 		"id":  id,
 		"record": func() map[string]interface{} {
 			record := make(map[string]interface{})
@@ -119,7 +126,7 @@ func DeleteRecord(ids []int) []byte {
 	urlStr := fmt.Sprintf("https://%s.cybozu.com/k/v1/records.json", conf.Subdomain)
 
 	params := map[string]interface{}{
-		"app": conf.API_ID,
+		"app": conf.APIID,
 		"ids": ids,
 	}
 	jsonParams, _ := json.Marshal(params)
@@ -137,7 +144,7 @@ func IsExisted(date string) bool {
 	conf := readConf()
 	urlStr := fmt.Sprintf("https://%s.cybozu.com/k/v1/records/cursor.json", conf.Subdomain)
 	params := map[string]interface{}{
-		"app":    conf.API_ID,
+		"app":    conf.APIID,
 		"fields": []string{"レコード番号"},
 		"query":  fmt.Sprintf("date=\"%s\"", date),
 		"size":   500,
@@ -154,7 +161,7 @@ func GetRecordByDate(fromDate string, toDate string) []byte {
 	conf := readConf()
 	urlStr := fmt.Sprintf("https://%s.cybozu.com/k/v1/records/cursor.json", conf.Subdomain)
 	params := map[string]interface{}{
-		"app":    conf.API_ID,
+		"app":    conf.APIID,
 		"fields": []string{"レコード番号", "date", "sleep", "hello"},
 		"query":  fmt.Sprintf("date>=\"%s\" and date<=\"%s\"", fromDate, toDate),
 		"size":   500,
