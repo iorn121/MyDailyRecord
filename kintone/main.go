@@ -127,3 +127,44 @@ func DeleteRecord(ids []int) []byte {
 
 	return res
 }
+
+type Cursor struct {
+	Id    string `json:"id"`
+	Total int    `json:"totalCount"`
+}
+
+func IsExisted(date string) bool {
+	conf := readConf()
+	urlStr := fmt.Sprintf("https://%s.cybozu.com/k/v1/records/cursor.json", conf.Subdomain)
+	params := map[string]interface{}{
+		"app":    conf.API_ID,
+		"fields": []string{"レコード番号"},
+		"query":  fmt.Sprintf("date=\"%s\"", date),
+		"size":   500,
+	}
+	jsonParams, _ := json.Marshal(params)
+	res := Request(urlStr, "POST", jsonParams)
+	var cursor Cursor
+	json.Unmarshal(res, &cursor)
+	fmt.Println(cursor.Total)
+	return cursor.Total > 0
+}
+
+func GetRecordByDate(fromDate string, toDate string) []byte {
+	conf := readConf()
+	urlStr := fmt.Sprintf("https://%s.cybozu.com/k/v1/records/cursor.json", conf.Subdomain)
+	params := map[string]interface{}{
+		"app":    conf.API_ID,
+		"fields": []string{"レコード番号", "date", "sleep", "hello"},
+		"query":  fmt.Sprintf("date>=\"%s\" and date<=\"%s\"", fromDate, toDate),
+		"size":   500,
+	}
+	jsonParams, _ := json.Marshal(params)
+	res := Request(urlStr, "POST", jsonParams)
+	var cursor Cursor
+	json.Unmarshal(res, &cursor)
+	fmt.Println(cursor.Total)
+	urlStr = fmt.Sprintf("https://%s.cybozu.com/k/v1/records/cursor.json?id=%s", conf.Subdomain, cursor.Id)
+	res = Request(urlStr, "GET", nil)
+	return res
+}
