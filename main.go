@@ -38,10 +38,21 @@ func HandleRequest(ctx context.Context) (*string, error) {
 	params["fullSleepBR"] = breathData.BR[0].Value.FullSleepSummary.BreathingRate
 	params["lightSleepBR"] = breathData.BR[0].Value.LightSleepSummary.BreathingRate
 
-	tempData:= fitbit.SkinTemperature(today)
-	params["skinTemp"] =tempData.TempSkin[0].Value.NightlyRelative
+	tempData := fitbit.SkinTemperature(today)
+	params["skinTemp"] = tempData.TempSkin[0].Value.NightlyRelative
 
-	
+	sleepData := fitbit.SleepDetail(today)
+	params["sleepDuration"] = sleepData.Sleep[0].Duration
+	params["sleepEfficiency"] = sleepData.Sleep[0].Efficiency
+	params["sleepStartTime"] = sleepData.Sleep[0].StartTime
+	params["sleepEndTime"] = sleepData.Sleep[0].EndTime
+	params["timInBed"] = sleepData.Sleep[0].TimeInBed
+	sleepLevels := []string{"wake", "light", "rem", "deep"}
+	for _, sl := range sleepLevels {
+		params[sl+"SleepCount"] = sleepData.Sleep[0].Levels.Summary[sl].Count
+		params[sl+"SleepMinutes"] = sleepData.Sleep[0].Levels.Summary[sl].Minutes
+		params[sl+"SleepThirtyDayAvgMinutes"] = sleepData.Sleep[0].Levels.Summary[sl].ThirtyDayAvgMinutes
+	}
 
 	// existed がサイズ0の場合
 	if len(existed) == 0 {
