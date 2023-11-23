@@ -16,9 +16,10 @@ func main() {
 
 func HandleRequest(ctx context.Context) (*string, error) {
 
-	today := time.Now().Format("2006-01-02")
-	existed := kintone.ExistedIndex(today)
 	var params map[string]interface{}
+	today := time.Now().Format("2006-01-02")
+	params["date"] = today
+	existed := kintone.ExistedIndex(today)
 
 	heartData := fitbit.HeartBeat(today)
 	zones := []string{"outOfRange", "fatBurn", "cardio", "peak"}
@@ -30,6 +31,14 @@ func HandleRequest(ctx context.Context) (*string, error) {
 		params[zone+"Minutes"] = hrz.Minutes
 	}
 	params["restingHeartRate"] = heartData.ActivitiesHeart[0].Value.RestingHeartRate
+
+	breathData := fitbit.BreathingRate(today)
+	params["deepSleepBR"] = breathData.BR[0].Value.DeepSleepSummary.BreathingRate
+	params["remSleepBR"] = breathData.BR[0].Value.RemSleepSummary.BreathingRate
+	params["fullSleepBR"] = breathData.BR[0].Value.FullSleepSummary.BreathingRate
+	params["lightSleepBR"] = breathData.BR[0].Value.LightSleepSummary.BreathingRate
+
+	
 
 	// existed がサイズ0の場合
 	if len(existed) == 0 {
