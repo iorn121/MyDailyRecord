@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"strconv"
 )
 
 type Config struct {
@@ -65,14 +66,18 @@ func Request(urlStr string, method string, params []byte) []byte {
 func GetRecord(id int) []byte {
 	conf := readConf()
 	urlStr := fmt.Sprintf("https://%s.cybozu.com/k/v1/record.json?app=%s&id=%d", conf.Subdomain, conf.APIID, id)
+	fmt.Printf("try get url:%s", urlStr)
 	res := Request(urlStr, "GET", nil)
+	fmt.Printf("get result:%s", string(res))
 	return res
 }
 
 func GetAllRecords() []byte {
 	conf := readConf()
 	urlStr := fmt.Sprintf("https://%s.cybozu.com/k/v1/records.json?app=%s", conf.Subdomain, conf.APIID)
+	fmt.Printf("try get url:%s", urlStr)
 	res := Request(urlStr, "GET", nil)
+	fmt.Printf("get result:%s", string(res))
 	return res
 }
 
@@ -93,7 +98,9 @@ func PostRecord(paramMap map[string]interface{}) []byte {
 		}(),
 	}
 	jsonParams, _ := json.Marshal(params)
+	fmt.Printf("try post params:%s\n", jsonParams)
 	res := Request(urlStr, "POST", jsonParams)
+	fmt.Printf("update result:%s\n", res)
 
 	return res
 }
@@ -116,8 +123,8 @@ func UpdateRecord(id int, paramMap map[string]interface{}) []byte {
 		}(),
 	}
 	jsonParams, _ := json.Marshal(params)
+	fmt.Printf("try update params:%s\n", jsonParams)
 	res := Request(urlStr, "PUT", jsonParams)
-
 	return res
 }
 
@@ -130,7 +137,9 @@ func DeleteRecord(ids []int) []byte {
 		"ids": ids,
 	}
 	jsonParams, _ := json.Marshal(params)
+	fmt.Printf("try delete params:%s\n", jsonParams)
 	res := Request(urlStr, "DELETE", jsonParams)
+	fmt.Printf("delete result:%s\n", res)
 
 	return res
 }
@@ -139,30 +148,34 @@ type Cursor struct {
 	Id    string `json:"id"`
 	Total int    `json:"totalCount"`
 }
-type Record struct {
+
+type RecordNumber struct {
 	Type  string `json:"type"`
-	Value int    `json:"value"`
+	Value string `json:"value"`
 }
 
-type RecordEntry struct {
-	RecordNumber Record `json:"レコード番号"`
+type Record struct {
+	RecordNumber RecordNumber `json:"レコード番号"`
 }
 
 type Response struct {
-	Records    []RecordEntry `json:"records"`
-	TotalCount int           `json:"totalCount"`
+	Records    []Record `json:"records"`
+	TotalCount string   `json:"totalCount"`
 }
 
 func ExistedIndex(date string) []int {
+
 	conf := readConf()
-	urlStr := fmt.Sprintf("https://%s.cybozu.com/k/v1/records.json?app=1&query=date=\"%s\"&fields[0]=レコード番号&totalCount=true", conf.Subdomain, date)
+	urlStr := fmt.Sprintf("https://%s.cybozu.com/k/v1/records.json?app=%s&query=date=\"%s\"&fields[0]=レコード番号&totalCount=true", conf.Subdomain, conf.APIID, date)
 	res := Request(urlStr, "GET", nil)
 	var response Response
 	json.Unmarshal(res, &response)
 	var index []int
 	for _, r := range response.Records {
-		index = append(index, r.RecordNumber.Value)
+		recordNumber, _ := strconv.Atoi(r.RecordNumber.Value)
+		index = append(index, recordNumber)
 	}
+	fmt.Printf("existed index:%v\n", index)
 	return index
 }
 

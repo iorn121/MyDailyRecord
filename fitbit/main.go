@@ -56,7 +56,7 @@ func bearerHeader() map[string]string {
 }
 
 // refresh refreshes access token and write to conf.json
-func refresh() {
+func refresh() error {
 	urlStr := "https://api.fitbit.com/oauth2/token"
 	conf := readConf()
 	params := url.Values{
@@ -68,25 +68,36 @@ func refresh() {
 
 	if err != nil {
 		fmt.Println(err)
+		return err
 	}
 	defer res.Body.Close()
 
 	body, err := io.ReadAll(res.Body)
 	if err != nil {
 		fmt.Println(err)
+		return err
 	}
 
 	var newToken NewToken
 	_ = json.Unmarshal(body, &newToken)
+	fmt.Println(newToken)
+	if newToken.AccessToken == "" {
+		fmt.Println("Failed to refresh token")
+		return fmt.Errorf("Failed to refresh token")
+	}
 	conf.AccessToken = newToken.AccessToken
+	conf.RefreshToken = newToken.AccessToken
 	file, err := os.OpenFile("fitbit/conf.json", os.O_WRONLY|os.O_TRUNC|os.O_CREATE, 0666)
+	fmt.Println(conf)
 	if err == nil {
 		defer file.Close()
 		encoder := json.NewEncoder(file)
 		_ = encoder.Encode(conf)
 	} else {
 		os.Setenv("ACCESS_TOKEN", newToken.AccessToken)
+		os.Setenv("REFRESH_TOKEN", newToken.AccessToken)
 	}
+	return nil
 }
 
 // isExpired checks if access token is expired
@@ -128,8 +139,10 @@ func request(urlStr string) []byte {
 	}
 
 	if isExpired(resBody) {
-		refresh()
-		resBody = request(urlStr)
+		err := refresh()
+		if err == nil {
+			resBody = request(urlStr)
+		}
 	}
 
 	return resBody

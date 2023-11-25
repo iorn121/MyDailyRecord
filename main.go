@@ -5,37 +5,59 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/iorn121/MyDailyRecord/fitbit"
 	"github.com/iorn121/MyDailyRecord/kintone"
 )
 
+func convertToJP(timestr string) (time.Time, error) {
+
+	// フォーマットを指定します。
+	timeFormat := "2006-01-02T15:04:05"
+	t, err := time.Parse(timeFormat, timestr)
+	if err != nil {
+		return time.Time{}, err
+	}
+
+	location, err := time.LoadLocation("Japan")
+	if err != nil {
+		return time.Time{}, err
+	}
+	jstTime := t.In(location)
+	adjustTime := jstTime.Add(time.Duration(-9) * time.Hour)
+
+	return adjustTime, nil
+}
+
 func main() {
-	lambda.Start(HandleRequest)
+	// lambda.Start(HandleRequest)
+	HandleRequest(context.Background(), &MyEvent{Name: "test"})
 }
 
 type MyEvent struct {
 	Name string `json:"name"`
 }
 
-func HandleRequest(ctx context.Context, event *MyEvent) (*string, error) {
-	fmt.Printf("start %s excecution", event.Name)
+func HandleRequest(ctx context.Context, event *MyEvent) error {
 
 	var params map[string]interface{} = make(map[string]interface{})
-	today := time.Now().Format("2006-01-02")
+	now := time.Now()
+	fmt.Printf("start %s excecution at %s\n", event.Name, now)
+	today := "2023-11-23"
 	params["date"] = today
 	existed := kintone.ExistedIndex(today)
 
 	heartData := fitbit.HeartBeat(today)
 	zones := []string{"outOfRange", "fatBurn", "cardio", "peak"}
-	for i, hrz := range heartData.ActivitiesHeart[0].Value.HeartRateZones {
-		zone := zones[i]
-		params[zone+"CaloriesOut"] = hrz.CaloriesOut
-		params[zone+"Min"] = hrz.Min
-		params[zone+"Max"] = hrz.Max
-		params[zone+"Minutes"] = hrz.Minutes
+	if len(heartData.ActivitiesHeart) > 0 {
+		for i, hrz := range heartData.ActivitiesHeart[0].Value.HeartRateZones {
+			zone := zones[i]
+			params[zone+"CaloriesOut"] = hrz.CaloriesOut
+			params[zone+"Min"] = hrz.Min
+			params[zone+"Max"] = hrz.Max
+			params[zone+"Minutes"] = hrz.Minutes
+		}
+		params["restingHeartRate"] = heartData.ActivitiesHeart[0].Value.RestingHeartRate
 	}
-	params["restingHeartRate"] = heartData.ActivitiesHeart[0].Value.RestingHeartRate
 
 	breathData := fitbit.BreathingRate(today)
 	if len(breathData.BR) > 0 {
@@ -51,11 +73,21 @@ func HandleRequest(ctx context.Context, event *MyEvent) (*string, error) {
 	}
 
 	sleepData := fitbit.SleepDetail(today)
-	if len(sleepData.Sleep) == 0 {
+	if len(sleepData.Sleep) > 0 {
 		params["sleepDuration"] = sleepData.Sleep[0].Duration
 		params["sleepEfficiency"] = sleepData.Sleep[0].Efficiency
-		params["sleepStartTime"] = sleepData.Sleep[0].StartTime
-		params["sleepEndTime"] = sleepData.Sleep[0].EndTime
+		startTime := sleepData.Sleep[0].StartTime
+		endTime := sleepData.Sleep[0].EndTime
+		startTimeJP, err := convertToJP(startTime)
+		if err != nil {
+			fmt.Println("Error converting start time to UTC:", err)
+		}
+		endTimeJP, err := convertToJP(endTime)
+		if err != nil {
+			fmt.Println("Error converting end time to UTC:", err)
+		}
+		params["sleepStartTime"] = startTimeJP.Format("2006-01-02T15:04:05.000-07:00")
+		params["sleepEndTime"] = endTimeJP.Format("2006-01-02T15:04:05.000-07:00")
 		params["timeInBed"] = sleepData.Sleep[0].TimeInBed
 		sleepLevels := []string{"wake", "light", "rem", "deep"}
 		for _, sl := range sleepLevels {
@@ -76,19 +108,20 @@ func HandleRequest(ctx context.Context, event *MyEvent) (*string, error) {
 	}
 
 	HRVData := fitbit.HRV(today)
-	if len(HRVData.Hrv) == 0 {
+	if len(HRVData.Hrv) > 0 {
 		params["dailyHRV"] = HRVData.Hrv[0].Value.DailyRmssd
 		params["deepHRV"] = HRVData.Hrv[0].Value.DeepRmssd
 	}
 
-	// existed がサイズ0の場合
 	if len(existed) == 0 {
+		fmt.Println("There are no data for today.")
 		kintone.PostRecord(params)
 	} else if len(existed) == 1 {
+		fmt.Printf("There are already data for today at %d.", existed[0])
 		kintone.UpdateRecord(existed[0], params)
 	} else {
-		return nil, fmt.Errorf("Today's data is duplicated")
+		fmt.Println("There is an error searching today's data")
 	}
-	fmt.Printf("end %s excecution", event.Name)
-	return nil, nil
+	fmt.Printf("\nend %s execution\n", event.Name)
+	return nil
 }
