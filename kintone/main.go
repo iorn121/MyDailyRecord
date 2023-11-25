@@ -146,7 +146,7 @@ func DeleteRecord(ids []int) []byte {
 
 type Cursor struct {
 	Id    string `json:"id"`
-	Total int    `json:"totalCount"`
+	Total string `json:"totalCount"`
 }
 
 type RecordNumber struct {
@@ -192,7 +192,8 @@ func GetRecordByDate(fromDate string, toDate string) []byte {
 	res := Request(urlStr, "POST", jsonParams)
 	var cursor Cursor
 	json.Unmarshal(res, &cursor)
-	fmt.Println(cursor.Total)
+	fmt.Printf("cursor:%v\n", string(res))
+	fmt.Printf("cursor:%v\n", cursor)
 	urlStr = fmt.Sprintf("https://%s.cybozu.com/k/v1/records/cursor.json?id=%s", conf.Subdomain, cursor.Id)
 	res = Request(urlStr, "GET", nil)
 	return res

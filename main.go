@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/iorn121/MyDailyRecord/fitbit"
 	"github.com/iorn121/MyDailyRecord/kintone"
 )
@@ -29,8 +30,8 @@ func convertToJP(timestr string) (time.Time, error) {
 }
 
 func main() {
-	// lambda.Start(HandleRequest)
-	HandleRequest(context.Background(), &MyEvent{Name: "test"})
+	lambda.Start(HandleRequest)
+	// HandleRequest(context.Background(), &MyEvent{Name: "test"})
 }
 
 type MyEvent struct {
