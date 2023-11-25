@@ -43,7 +43,7 @@ func HandleRequest(ctx context.Context, event *MyEvent) error {
 	var params map[string]interface{} = make(map[string]interface{})
 	now := time.Now()
 	fmt.Printf("start %s excecution at %s\n", event.Name, now)
-	today := "2023-11-23"
+	today := now.Format("2006-01-02")
 	params["date"] = today
 	existed := kintone.ExistedIndex(today)
 
