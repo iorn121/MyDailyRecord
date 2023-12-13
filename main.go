@@ -31,7 +31,7 @@ func convertToJP(timestr string) (time.Time, error) {
 
 func main() {
 	lambda.Start(HandleRequest)
-	// HandleRequest(context.Background(), &MyEvent{Name: "test"})
+	// HandleRequest(context.Background(), &MyEvent{Name: "test"}, today)
 }
 
 type MyEvent struct {

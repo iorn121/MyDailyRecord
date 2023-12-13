@@ -1,57 +1,56 @@
-# Name（リポジトリ/プロジェクト/OSSなどの名前）
+# MyDailyRecord
 
-分かりやすくてカッコイイ名前をつける
-
-"hoge"が何かを簡潔に紹介する
+このプロジェクトは、Fitbit で取得したデータを kintone 上に記録するためのアプリケーションです。
+AWS Lambda で動作させています。
+それぞれのアプリケーションは独自のディレクトリ（fitbit と kintone）に配置されています。
 
 # DEMO
 
-"hoge"の魅力が直感的に伝えわるデモ動画や図解を載せる
+![kintone](image.png)
 
 # Features
 
-"hoge"のセールスポイントや差別化などを説明する
+Fitbit の取得データを JSON で取得するために取りうるデータのほとんどを型定義しました。
+同様の処理をしたい場合にはあ参考になると思われます。
 
 # Requirement
 
-"hoge"を動かすのに必要なライブラリなどを列挙する
+Go の環境を用意してください
 
-* huga 3.5.2
-* hogehuga 1.0.2
-
-# Installation
-
-Requirementで列挙したライブラリなどのインストール方法を説明する
-
-```bash
-pip install huga_package
-```
+Go : 1.20.4 linux/amd64
+aws-lambda-go : v1.41.0
 
 # Usage
 
-DEMOの実行方法など、"hoge"の基本的な使い方を説明する
+使用する場合はバイナリを作成して Lambda 関数に登録してください。
+バイナリの作成方法は makezip を参照してください。
 
-```bash
-git clone https://github.com/hoge/~
-cd examples
-python demo.py
-```
+kintone, fitbit 両方をライブラリ化しているため、独立して使用することが可能です。
 
 # Note
 
-注意点などがあれば書く
+環境変数はローカルでは下記のように設定してください。
 
-# Author
+- kintone ディレクトリに conf.json を用意
 
-作成情報を列挙する
+```json
+{
+  "api_token": "{発行したAPIトークン}",
+  "subdomain": "{サブドメイン}",
+  "api_id": "{アプリのid}"
+}
+```
 
-* 作成者
-* 所属
-* E-mail
+- fitbit ディレクトリに conf.json を用意
+
+```json
+{
+  "access_token": "{発行したトークン}",
+  "refresh_token": "{トークンの再取得に使うトークン}",
+  "client_id": "{ClientId}"
+}
+```
 
 # License
-ライセンスを明示する
 
-"hoge" is under [MIT license](https://en.wikipedia.org/wiki/MIT_License).
-
-"hoge" is Confidential.
+This is under [MIT license](https://en.wikipedia.org/wiki/MIT_License).

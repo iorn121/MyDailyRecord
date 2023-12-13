@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"strings"
 )
 
 // Config is a struct for conf.json
@@ -64,14 +65,21 @@ func refresh() error {
 		"refresh_token": {conf.RefreshToken},
 		"client_id":     {conf.ClientID},
 	}
-	res, err := http.PostForm(urlStr, params)
+	client := &http.Client{}
+	request, err := http.NewRequest("POST", urlStr, strings.NewReader(params.Encode()))
+	if err != nil {
+		fmt.Println(err)
+		return err
+	}
 
+	request.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+
+	res, err := client.Do(request)
 	if err != nil {
 		fmt.Println(err)
 		return err
 	}
 	defer res.Body.Close()
-
 	body, err := io.ReadAll(res.Body)
 	if err != nil {
 		fmt.Println(err)
@@ -86,16 +94,13 @@ func refresh() error {
 		return fmt.Errorf("Failed to refresh token")
 	}
 	conf.AccessToken = newToken.AccessToken
-	conf.RefreshToken = newToken.AccessToken
 	file, err := os.OpenFile("fitbit/conf.json", os.O_WRONLY|os.O_TRUNC|os.O_CREATE, 0666)
-	fmt.Println(conf)
 	if err == nil {
 		defer file.Close()
 		encoder := json.NewEncoder(file)
 		_ = encoder.Encode(conf)
 	} else {
 		os.Setenv("ACCESS_TOKEN", newToken.AccessToken)
-		os.Setenv("REFRESH_TOKEN", newToken.AccessToken)
 	}
 	return nil
 }
