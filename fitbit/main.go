@@ -8,6 +8,8 @@ import (
 	"net/url"
 	"os"
 	"strings"
+
+	"github.com/iorn121/MyDailyRecord/lambda_conf"
 )
 
 // Config is a struct for conf.json
@@ -100,7 +102,7 @@ func refresh() error {
 		encoder := json.NewEncoder(file)
 		_ = encoder.Encode(conf)
 	} else {
-		os.Setenv("ACCESS_TOKEN", newToken.AccessToken)
+		lambda_conf.UpdateEnv(map[string]string{"AccessToken": newToken.AccessToken})
 	}
 	return nil
 }
