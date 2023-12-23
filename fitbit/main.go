@@ -31,7 +31,8 @@ type Message struct {
 
 // NewToken is a struct for new token
 type NewToken struct {
-	AccessToken string `json:"access_token"`
+	AccessToken   string `json:"access_token"`
+	REFRESH_TOKEN string `json:"refresh_token"`
 }
 
 // readConf reads conf.json and set to conf
@@ -43,10 +44,19 @@ func readConf() Config {
 		decoder := json.NewDecoder(file)
 		_ = decoder.Decode(&conf)
 	} else {
-		conf.AccessToken = os.Getenv("ACCESS_TOKEN")
-		conf.RefreshToken = os.Getenv("REFRESH_TOKEN")
-		conf.ClientID = os.Getenv("CLIENT_ID")
+		// conf.AccessToken = os.Getenv("ACCESS_TOKEN")
+		// conf.RefreshToken = os.Getenv("REFRESH_TOKEN")
+		// conf.ClientID = os.Getenv("CLIENT_ID")
+		envConf, err := lambda_conf.GetEnv()
+		if err != nil {
+			fmt.Println(err)
+		} else {
+			conf.AccessToken = envConf.AccessToken
+			conf.RefreshToken = envConf.RefreshToken
+			conf.ClientID = envConf.ClientID
+		}
 	}
+	fmt.Println("read conf")
 	return conf
 }
 
@@ -96,14 +106,16 @@ func refresh() error {
 		return fmt.Errorf("Failed to refresh token")
 	}
 	conf.AccessToken = newToken.AccessToken
+	conf.RefreshToken = newToken.REFRESH_TOKEN
 	file, err := os.OpenFile("fitbit/conf.json", os.O_WRONLY|os.O_TRUNC|os.O_CREATE, 0666)
 	if err == nil {
 		defer file.Close()
 		encoder := json.NewEncoder(file)
 		_ = encoder.Encode(conf)
 	} else {
-		lambda_conf.UpdateEnv(map[string]string{"AccessToken": newToken.AccessToken})
+		lambda_conf.UpdateEnv(map[string]string{"AccessToken": newToken.AccessToken, "RefreshToken": newToken.REFRESH_TOKEN})
 	}
+	fmt.Println("Refreshed token")
 	return nil
 }
 

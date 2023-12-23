@@ -6,6 +6,12 @@ import (
 	"github.com/aws/aws-sdk-go/service/lambda"
 )
 
+type Config struct {
+	AccessToken  string `json:"access_token"`
+	RefreshToken string `json:"refresh_token"`
+	ClientID     string `json:"client_id"`
+}
+
 func UpdateEnv(conf map[string]string) error {
 	sess := session.Must(session.NewSessionWithOptions(session.Options{
 		SharedConfigState: session.SharedConfigEnable,
@@ -25,6 +31,7 @@ func UpdateEnv(conf map[string]string) error {
 
 	// Update ACCESS_TOKEN
 	getResult.Environment.Variables["ACCESS_TOKEN"] = aws.String(conf["AccessToken"])
+	getResult.Environment.Variables["REFRESH_TOKEN"] = aws.String(conf["RefreshToken"])
 
 	// Update environment variables
 	updateInput := &lambda.UpdateFunctionConfigurationInput{
@@ -38,4 +45,28 @@ func UpdateEnv(conf map[string]string) error {
 	}
 
 	return nil
+}
+
+func GetEnv() (Config, error) {
+	sess := session.Must(session.NewSessionWithOptions(session.Options{
+		SharedConfigState: session.SharedConfigEnable,
+	}))
+
+	svc := lambda.New(sess, &aws.Config{Region: aws.String("ap-northeast-1")})
+
+	// Get current environment variables
+	getInput := &lambda.GetFunctionConfigurationInput{
+		FunctionName: aws.String("test2"),
+	}
+
+	getResult, err := svc.GetFunctionConfiguration(getInput)
+	if err != nil {
+		return Config{}, err
+	}
+
+	return Config{
+		AccessToken:  *getResult.Environment.Variables["ACCESS_TOKEN"],
+		RefreshToken: *getResult.Environment.Variables["REFRESH_TOKEN"],
+		ClientID:     *getResult.Environment.Variables["CLIENT_ID"],
+	}, nil
 }
